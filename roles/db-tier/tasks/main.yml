@@ -1,2 +1,36 @@
 ---
 # tasks file for db-tier
+
+- name: Install latest version of postgresql-server with Yum
+  yum:
+    name: postgresql-server
+    state: latest
+
+- name: Attempt to start postgres service...
+  service:
+    name: postgresql.service
+    state: started
+    enabled: yes
+  register: postgres_service_info
+  ignore_errors: yes
+
+- when: postgres_service_info.failed
+  block:
+ # only run the next 2 tasks once
+  - name: initilize postgres
+    command: postgresql-setup initdb
+
+  - name: initilize postgres some more
+    command: chkconfig postgresql on
+
+  - name: start postgres
+    service:
+      name: postgresql.service
+      state: started
+      enabled: yes
+    register: postgres_service_info
+
+- name: Debug postgres.service info
+  debug:
+    var: postgres_service_info
+
